@@ -30,24 +30,25 @@ if __name__ == "__main__":
     r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers = headers)
 
     data = r.json()
-    print(data)
 
-    song_name = []
-    artist_name = []
+    song_names = []
+    artist_names = []
     played_at_list = []
     timestamps = []
 
     for song in data["items"]:
-        song_name.append(song["track"]["name"])
-        artist_name.append(song["track"]["album"]["artists"[0]]["name"])
+        song_names.append(song["track"]["name"])
+        artist_names.append(song["track"]["album"]["artists"][0]["name"])
         played_at_list.append(song["played_at"])
         timestamps.append(song["played_at"][0:10])
 
     song_dict = {
-        "song_name": song_name,
-        "artist_name": artist_name,
-        "palyed_at":played_at_list,
+        "song_name": song_names,
+        "artist_name": artist_names,
+        "played_at": played_at_list,
         "timestamps": timestamps
     }
 
+    song_df = pd.DataFrame(song_dict,columns=["song_name", "artist_name", "played_at", "timestamps"])
 
+    print(song_df)
