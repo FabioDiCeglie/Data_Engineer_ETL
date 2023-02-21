@@ -1,10 +1,10 @@
-import sqlalchemy
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
 import requests
 from datetime import datetime, timedelta
-import sqlite3
 import environ
+import psycopg2
+from sqlalchemy import create_engine
 
 # Initialise environment variables
 env = environ.Env()
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     headers={
         "Accept":"application/json",
         "Content-Type":"application/json",
-        "Authorization":"Bearer {token}".format(token=TOKEN)
+        "Authorization":f"Bearer {TOKEN}"
     }
 
     # Convert time to Unix timestamp in miliseconds
@@ -90,26 +90,58 @@ if __name__ == "__main__":
 
     # Load
 
-    engine = sqlalchemy.create_engine(DATABASE_LOCATION)
-    conn = sqlite3.connect('my_played_tracks.sqlite')
-    cursor = conn.cursor()
+    # engine = sqlalchemy.create_engine(DATABASE_LOCATION)
+    # conn = sqlite3.connect('my_played_tracks.sqlite')
+    # cursor = conn.cursor()
 
-    sql_query = """
-        CREATE TABLE IF NOT EXISTS my_played_tracks(
-        song_name VARCHAR(200),
-        artist_name VARCHAR(200),
-        played_at VARCHAR(200),
-        timestamp VARCHAR(200),
-        CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
-    )
-    """
-    cursor.execute(sql_query)
-    print("Opened database successfully")
+    # sql_query = """
+    #     CREATE TABLE IF NOT EXISTS my_played_tracks(
+    #     song_name VARCHAR(200),
+    #     artist_name VARCHAR(200),
+    #     played_at VARCHAR(200),
+    #     timestamp VARCHAR(200),
+    #     CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
+    # )
+    # """
+    # cursor.execute(sql_query)
+    # print("Opened database successfully")
+
+    # try:
+    #     song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
+    # except:
+    #     print("Data already exists in the database")
+
+    # conn.close()
+    # print("Close database successfully")
+    conn_string = env("DATABASE_URL")
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+    # conn = psycopg2.connect(
+    #                     database=env("DATABASE_NAME"),
+    #                     host=env("DATABASE_HOST"),
+    #                     user=env("DATABASE_USER"),
+    #                     password=env("DATABASE_PASSWORD"),
+    #                     port=env("DATABASE_PORT")
+    #                     )
+    # cursor = conn.cursor()
+    # cursor.execute("CREATE TABLE IF NOT EXISTS my_played_tracks(song_name VARCHAR(200),artist_name VARCHAR(200),played_at VARCHAR(200),timestamp VARCHAR(200),CONSTRAINT primary_key_constraint PRIMARY KEY (played_at))")
+    # print("Opened database successfully")
 
     try:
-        song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
+        song_df.to_sql("my_played_tracks", con=conn, index=False, if_exists='append')
     except:
         print("Data already exists in the database")
 
+    conn = psycopg2.connect(conn_string)
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    sql1 = '''SELECT * FROM "public"."my_played_tracks" LIMIT 100'''
+    cursor.execute(sql1)
+    for i in cursor.fetchall():
+        print(i)
+
+    # conn.commit()
     conn.close()
     print("Close database successfully")
