@@ -38,7 +38,7 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
 
     for timestamp in timestamps:
         timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
-        if not now-timedelta(hours=24) <= timestamp <= now:
+        if now-timedelta(hours=24) >= timestamp >= now:
             print(timestamp)
             raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
 
@@ -58,8 +58,8 @@ if __name__ == "__main__":
     # Convert time to Unix timestamp in miliseconds
     today = datetime.now()
     yesterday = today - timedelta(days=1)
-    yesterday_unix_timestamp = #tocheck
-    print(yesterday_unix_timestamp)
+    # yesterday_unix_timestamp = int(time.mktime(yesterday.timetuple()))
+    yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
 
     # Download all songs you've listened to "after yesterday", which means in the last 24 hours
     r = requests.get(f"https://api.spotify.com/v1/me/player/recently-played?after={yesterday_unix_timestamp}", headers = headers)
@@ -85,7 +85,6 @@ if __name__ == "__main__":
     }
 
     song_df = pd.DataFrame(song_dict,columns=["song_name", "artist_name", "played_at", "timestamp"])
-    print(song_df)
 
     # Validate
     if check_if_valid_data(song_df):
