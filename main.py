@@ -28,6 +28,10 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
     else:
         raise Exception("Primary Key check is violated")
 
+    # Check for nulls
+    if df.isnull().values.any():
+        raise Exception("Null values found")
+
 
 
 if __name__ == "__main__":
