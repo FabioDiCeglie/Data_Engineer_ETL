@@ -22,6 +22,11 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
         print("No songs downloaded. Finishing execution")
         return False
 
+    # Primary Key check
+    if pd.Series(df['played_at']).is_unique:
+        pass
+    else:
+        raise Exception("Primary Key check is violated")
 
 
 
