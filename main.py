@@ -32,6 +32,16 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
     if df.isnull().values.any():
         raise Exception("Null values found")
 
+    # Check that all timestamps are of yesterday's date
+    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+    timestamps = df["timestamp"].tolist()
+
+    for timestamp in timestamps:
+        if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
+            raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
+
+    return True
 
 
 if __name__ == "__main__":
@@ -65,10 +75,10 @@ if __name__ == "__main__":
         "song_name": song_names,
         "artist_name": artist_names,
         "played_at": played_at_list,
-        "timestamps": timestamps
+        "timestamp": timestamps
     }
 
-    song_df = pd.DataFrame(song_dict,columns=["song_name", "artist_name", "played_at", "timestamps"])
+    song_df = pd.DataFrame(song_dict,columns=["song_name", "artist_name", "played_at", "timestamp"])
 
     # Validate
     if check_if_valid_data(song_df):
