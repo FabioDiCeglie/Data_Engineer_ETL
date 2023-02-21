@@ -16,6 +16,15 @@ DATABASE_LOCATION=env('DATABASE_LOCATION')
 USER_ID=env('USER_ID')
 TOKEN=env('TOKEN')
 
+def check_if_valid_data(df: pd.DataFrame) -> bool:
+    # Check if dataframe is empty
+    if df.empty:
+        print("No songs downloaded. Finishing execution")
+        return False
+
+
+
+
 if __name__ == "__main__":
 
     headers={
