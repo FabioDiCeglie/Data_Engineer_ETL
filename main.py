@@ -70,4 +70,6 @@ if __name__ == "__main__":
 
     song_df = pd.DataFrame(song_dict,columns=["song_name", "artist_name", "played_at", "timestamps"])
 
-    print(song_df)
+    # Validate
+    if check_if_valid_data(song_df):
+        print("Data valid, proceed to Load stage")
