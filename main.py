@@ -3,10 +3,10 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker
 import requests
 import json
-from datetime import datetime
-import datetime
+from datetime import datetime, timedelta
 import sqlite3
 import environ
+import time
 
 # Initialise environment variables
 env = environ.Env()
@@ -33,12 +33,13 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
         raise Exception("Null values found")
 
     # Check that all timestamps are of yesterday's date
-    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-    yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
-    timestamps = df["timestamp"].tolist()
+    now = datetime.now()
+    timestamps = df["played_at"]
 
     for timestamp in timestamps:
-        if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
+        timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+        if not now-timedelta(hours=24) <= timestamp <= now:
+            print(timestamp)
             raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
 
     return True
@@ -46,17 +47,22 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
 
 if __name__ == "__main__":
 
+    # Extract part of the ETL process
+
     headers={
         "Accept":"application/json",
         "Content-Type":"application/json",
         "Authorization":"Bearer {token}".format(token=TOKEN)
     }
 
-    today = datetime.datetime.now()
-    yesterday = today - datetime.timedelta(days=1)
-    yesterday_unix_timestamp= int(yesterday.timestamp()) * 1000
+    # Convert time to Unix timestamp in miliseconds
+    today = datetime.now()
+    yesterday = today - timedelta(days=1)
+    yesterday_unix_timestamp = #tocheck
+    print(yesterday_unix_timestamp)
 
-    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers = headers)
+    # Download all songs you've listened to "after yesterday", which means in the last 24 hours
+    r = requests.get(f"https://api.spotify.com/v1/me/player/recently-played?after={yesterday_unix_timestamp}", headers = headers)
 
     data = r.json()
 
@@ -79,6 +85,7 @@ if __name__ == "__main__":
     }
 
     song_df = pd.DataFrame(song_dict,columns=["song_name", "artist_name", "played_at", "timestamp"])
+    print(song_df)
 
     # Validate
     if check_if_valid_data(song_df):
