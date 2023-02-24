@@ -2,17 +2,17 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker
 import requests
 from datetime import datetime, timedelta
-import environ
+from dotenv import load_dotenv,find_dotenv
+import os
 import psycopg2
 from sqlalchemy import create_engine
 
 # Initialise environment variables
-env = environ.Env()
-environ.Env.read_env()
+load_dotenv(find_dotenv())
 
-DATABASE_LOCATION=env('DATABASE_LOCATION')
-USER_ID=env('USER_ID')
-TOKEN=env('TOKEN')
+DATABASE_LOCATION=os.getenv('DATABASE_LOCATION')
+USER_ID=os.getenv('USER_ID')
+TOKEN=os.getenv('TOKEN')
 
 def check_if_valid_data(df: pd.DataFrame) -> bool:
     # Check if dataframe is empty
@@ -61,7 +61,6 @@ if __name__ == "__main__":
 
     # Download all songs you've listened to "after yesterday", which means in the last 24 hours
     r = requests.get(f"https://api.spotify.com/v1/me/player/recently-played?after={yesterday_unix_timestamp}", headers = headers)
-
     data = r.json()
 
     song_names = []
@@ -113,7 +112,7 @@ if __name__ == "__main__":
 
     # conn.close()
     # print("Close database successfully")
-    conn_string = env("DATABASE_URL")
+    conn_string = os.getenv("DATABASE_URL")
 
     db = create_engine(conn_string)
     conn = db.connect()

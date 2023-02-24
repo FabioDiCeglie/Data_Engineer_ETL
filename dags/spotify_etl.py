@@ -2,17 +2,18 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker
 import requests
 from datetime import datetime, timedelta
-import environ
+from dotenv import load_dotenv,find_dotenv
+import os
 import psycopg2
 from sqlalchemy import create_engine
+import logging
 
 # Initialise environment variables
-env = environ.Env()
-environ.Env.read_env()
+load_dotenv(find_dotenv())
 
-DATABASE_LOCATION=env('DATABASE_LOCATION')
-USER_ID=env('USER_ID')
-TOKEN=env('TOKEN')
+DATABASE_LOCATION=os.getenv('DATABASE_LOCATION')
+USER_ID=os.getenv('USER_ID')
+TOKEN=os.getenv('TOKEN')
 
 def check_if_valid_data(df: pd.DataFrame) -> bool:
     # Check if dataframe is empty
@@ -43,8 +44,8 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
     return True
 
 
-def spotify_etl():
-
+def run_spotify_etl():
+    logging.info("Start DAG")
     # Extract part of the ETL process
 
     headers={
@@ -58,11 +59,16 @@ def spotify_etl():
     yesterday = today - timedelta(days=1)
     # yesterday_unix_timestamp = int(time.mktime(yesterday.timetuple()))
     yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
+    logging.info("before request")
 
     # Download all songs you've listened to "after yesterday", which means in the last 24 hours
-    r = requests.get(f"https://api.spotify.com/v1/me/player/recently-played?after={yesterday_unix_timestamp}", headers = headers)
+    try:
+        r = requests.get(f"https://api.spotify.com/v1/me/player/recently-played?after={yesterday_unix_timestamp}", headers = headers)
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(e)
 
     data = r.json()
+    logging.info(f"data {data}")
 
     song_names = []
     artist_names = []
@@ -86,11 +92,11 @@ def spotify_etl():
 
     # Validate
     if check_if_valid_data(song_df):
-        print("Data valid, proceed to Load stage")
+        logging.info("Data valid, proceed to Load stage")
 
     # Load
 
-    conn_string = env("DATABASE_URL")
+    conn_string = os.getenv("DATABASE_URL")
 
     db = create_engine(conn_string)
     conn = db.connect()
@@ -98,7 +104,7 @@ def spotify_etl():
     try:
         song_df.to_sql("my_played_tracks", con=conn, index=False, if_exists='append')
     except:
-        print("Data already exists in the database")
+        logging.info("Data already exists in the database")
 
     conn = psycopg2.connect(conn_string)
     conn.autocommit = True
@@ -107,8 +113,8 @@ def spotify_etl():
     sql1 = '''SELECT * FROM "public"."my_played_tracks" LIMIT 100'''
     cursor.execute(sql1)
     for i in cursor.fetchall():
-        print(i)
+        logging.info(f"{i}")
 
     # conn.commit()
     conn.close()
-    print("Close database successfully")
+    logging.info("Close database successfully")
